@@ -7,6 +7,17 @@ inputs:
   npm_token:
     description: Npm token for target package
     required: true
+  git_name:
+    description: The name of the git
+    required: false
+    default: github-actions
+  git_email:
+    description: The email of the git
+    required: false
+    default: 41898282+github-actions[bot]@users.noreply.github.com
+  suppress_release_creation:
+    description: Suppress a release creation
+    required: false
 runs:
   using: node12
   main: dist/index.js

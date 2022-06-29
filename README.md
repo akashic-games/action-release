@@ -20,6 +20,12 @@
     github_token: ${{ secrets.GITHUB_TOKEN }}
     # npmトークンは予め対象のgithubリポジトリに秘匿変数として登録しておくことを推奨します
     npm_token: ${{ secrets.NPM_TOKEN }}
+    # CHANGELOG.md 更新時の Git 名 (省略可)
+    git_name: github-actions
+    # CHANGELOG.md 更新時の Git メールアドレス (省略可)
+    git_email: 41898282+github-actions[bot]@users.noreply.github.com
+    # 対象リポジトリに Release Note を生成するかどうか。省略時は `false` 。
+    suppress_release_creation: false
 ```
 
 ## 注意点
