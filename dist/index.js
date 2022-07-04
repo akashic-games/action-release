@@ -28187,7 +28187,6 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 				if (body !== "") {
 					fs.writeFileSync(unreleasedChangesPath, "");
 					await git.add(unreleasedChangesPath);
-					await git.commit("Update UNRELEASED_CHANGES.md");
 				} else {
 					// TODO: 変更内容の修正
 					body = "* 内部モジュールの更新";
