@@ -28197,7 +28197,8 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 				await git.commit("Update CHANGELOG.md");
 			}
 		} else {
-			body = "* その他の更新"
+			// TODO: 文言の修正 (もう少し機械的に抽出できそう?)
+			body = "* その他の更新";
 		}
 
 		await git.push("origin", currentBranch);
