@@ -3,7 +3,7 @@ name: test
 on: [push, pull_request]
 
 env:
-  NODE_VERSION: 14
+  NODE_VERSION: 18
   cache-version: v1
 
 jobs:
