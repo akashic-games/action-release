@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const core = require("@actions/core");
 const github = require("@actions/github");
-const npmPublish = require("@jsdevtools/npm-publish");
+const { npmPublish } = require("@jsdevtools/npm-publish");
 const canNpmPublish = require("can-npm-publish").canNpmPublish;
 const simpleGit = require("simple-git");
 
