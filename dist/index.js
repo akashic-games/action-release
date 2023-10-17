@@ -56096,7 +56096,7 @@ const fs = __nccwpck_require__(7147);
 const path = __nccwpck_require__(1017);
 const core = __nccwpck_require__(2186);
 const github = __nccwpck_require__(5438);
-const npmPublish = __nccwpck_require__(5538);
+const { npmPublish } = __nccwpck_require__(5538);
 const canNpmPublish = (__nccwpck_require__(7339)/* .canNpmPublish */ .F);
 const simpleGit = __nccwpck_require__(9103);
 
