@@ -56174,7 +56174,7 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 
 		const octokit = github.getOctokit(inputs.githubToken);
 		if (inputs.suppressReleaseCreation !== "true") {
-			await octokit.repos.createRelease({
+			await octokit.rest.repos.createRelease({
 				owner: ownerName,
 				repo: repositoryName,
 				tag_name: "v" + version,
