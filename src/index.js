@@ -39,7 +39,7 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 		const version = packageJson["version"];
 		const git = simpleGit();
 
-		git
+		await git
 			.addConfig("user.name", inputs.gitName, undefined, "global")
 			.addConfig("user.email", inputs.gitEmail, undefined, "global");
 
