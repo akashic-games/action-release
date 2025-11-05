@@ -1,8 +1,8 @@
+const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const core = require("@actions/core");
 const github = require("@actions/github");
-const { npmPublish } = require("@jsdevtools/npm-publish");
 const canNpmPublish = require("can-npm-publish").canNpmPublish;
 const simpleGit = require("simple-git");
 
@@ -10,7 +10,6 @@ const generateReleaseNote = require("./generateReleaseNote");
 const injectChangelog = require("./injectChangelog");
 const inputs = {
 	githubToken: core.getInput("github_token"),
-	npmToken: core.getInput("npm_token"),
 	suppressReleaseCreation: core.getInput("suppress_release_creation"),
 	gitName: core.getInput("git_name"),
 	gitEmail: core.getInput("git_email"),
@@ -73,10 +72,7 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 
 		await git.push("origin", currentBranch);
 
-		await npmPublish({
-			package: packageJsonPath,
-			token: inputs.npmToken
-		});
+		execSync("npm publish --provenance");
 
 		const octokit = github.getOctokit(inputs.githubToken);
 		if (inputs.suppressReleaseCreation !== "true") {

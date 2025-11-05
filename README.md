@@ -7,19 +7,16 @@
 
 ## 入力パラメータ
 * `github_token`: 対象リポジトリの Github トークン。必須パラメータ
-* `npm_token`: 対象リポジトリの Npm パッケージの Npm トークン。必須パラメータ
 
 ### 利用例
 ```yml
 - name: Checkout repository
   uses: actions/checkout@v2
 - name: Publish and Release
-  uses: akashic-games/action-release@v1
+  uses: akashic-games/action-release@v3
   with:
     # 基本的にはデフォルトで設定されている秘匿変数GITHUB_TOKENを使用します
     github_token: ${{ secrets.GITHUB_TOKEN }}
-    # npmトークンは予め対象のgithubリポジトリに秘匿変数として登録しておくことを推奨します
-    npm_token: ${{ secrets.NPM_TOKEN }}
     # CHANGELOG.md 更新時の Git 名 (省略可)
     git_name: github-actions
     # CHANGELOG.md 更新時の Git メールアドレス (省略可)
