@@ -72,7 +72,7 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 
 		await git.push("origin", currentBranch);
 
-		execSync(`cd ${path.resolve(targetDirPath)} && npm publish --provenance`);
+		execSync("npm publish --provenance", { cwd: targetDirPath, encoding: "utf-8" });
 
 		const octokit = github.getOctokit(inputs.githubToken);
 		if (inputs.suppressReleaseCreation !== "true") {
