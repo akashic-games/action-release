@@ -4,9 +4,6 @@ inputs:
   github_token:
     description: Github token for target repository
     required: true
-  npm_token:
-    description: Npm token for target package
-    required: true
   git_name:
     description: The name of the git
     required: false
@@ -19,5 +16,5 @@ inputs:
     description: Suppress a release creation
     required: false
 runs:
-  using: node20
+  using: node24
   main: dist/index.js
