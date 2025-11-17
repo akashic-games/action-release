@@ -1,6 +1,6 @@
 {
   "name": "@akashic/actions-release",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Common release action",
   "private": true,
   "scripts": {

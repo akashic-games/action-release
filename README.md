@@ -29,6 +29,21 @@
 このアクションを使用する場合、対象のパッケージでは以下の対応が必要になります。
 * スコープ化された公開パッケージの場合、package.jsonの`publishConfig.access`に`"public"`を指定する必要があります。
 * publish 処理をトークンレスで行うので、[Trusted Publishing の設定](https://docs.npmjs.com/trusted-publishers)が必要になります。
+* npm トークンを付与して publish 処理を行う必要があるときは、次のように [action/setup-node](https://github.com/actions/setup-node) を併用してください。
+```yml
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          registry-url: 'https://registry.npmjs.org' # 以降のステップでNODE_AUTH_TOKENにトークンを付与するで指定のnpmレジストリにログインできるように
+      # 〜中略〜
+      - name: Publish and Release
+        uses: akashic-games/action-release@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+```
 
 ## ビルド方法
 以下のコマンドを実行
