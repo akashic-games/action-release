@@ -43984,7 +43984,7 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 
 		await git.push("origin", currentBranch);
 
-		execSync("npm publish --provenance");
+		execSync("npm publish", { cwd: targetDirPath, encoding: "utf-8" });
 
 		const octokit = github.getOctokit(inputs.githubToken);
 		if (inputs.suppressReleaseCreation !== "true") {
