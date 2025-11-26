@@ -43922,6 +43922,7 @@ const generateReleaseNote = __nccwpck_require__(2924);
 const injectChangelog = __nccwpck_require__(6432);
 const inputs = {
 	githubToken: core.getInput("github_token"),
+	targetTag: core.getInput("target_tag"),
 	suppressReleaseCreation: core.getInput("suppress_release_creation"),
 	gitName: core.getInput("git_name"),
 	gitEmail: core.getInput("git_email"),
@@ -43955,6 +43956,7 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 			.addConfig("user.email", inputs.gitEmail, undefined, "global");
 
 		let body = "";
+		let hasUpdateChangeLog = false;
 		if (fs.existsSync(changelogPath)) {
 			const changelog = fs.readFileSync(changelogPath).toString();
 			body = generateReleaseNote(changelog, version);
@@ -43976,17 +43978,35 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 				fs.writeFileSync(changelogPath, newChangelog);
 				await git.add(changelogPath);
 				await git.commit("Update CHANGELOG.md");
+				hasUpdateChangeLog = true;
 			}
 		} else {
 			// TODO: 文言の修正 (もう少し機械的に抽出できそう?)
 			body = "* その他の更新";
 		}
 
-		await git.push("origin", currentBranch);
-
-		execSync("npm publish", { cwd: targetDirPath, encoding: "utf-8" });
-
 		const octokit = github.getOctokit(inputs.githubToken);
+
+		// CHANGELOG を更新する場合は、publish せず Pull Request を作成する
+		if (hasUpdateChangeLog) {
+			const branchName = `update-changelog-for-v${version}-${Date.now()}`;
+			await git.checkoutLocalBranch(branchName);
+			await git.push("origin", branchName);
+			const prTitle = `Update CHANGELOG for v${version}`;
+			const prBody = `CHANGELOG.md was updated for v${version}.\n\nPlease check the contents and merge this Pull Request to proceed with the release.`;
+			await octokit.rest.pulls.create({
+				owner: ownerName,
+				repo: repositoryName,
+				title: prTitle,
+				body: prBody,
+				head: branchName,
+				base: currentBranch
+			});
+			return;
+		}
+
+		execSync(`npm publish --tag ${inputs.targetTag}`, { cwd: targetDirPath, encoding: "utf-8" });
+
 		if (inputs.suppressReleaseCreation !== "true") {
 			await octokit.rest.repos.createRelease({
 				owner: ownerName,
