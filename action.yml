@@ -15,6 +15,10 @@ inputs:
   suppress_release_creation:
     description: Suppress a release creation
     required: false
+  target_tag:
+    description: Tag name when publishing package
+    required: false
+    default: "latest"
 runs:
   using: node24
   main: dist/index.js
