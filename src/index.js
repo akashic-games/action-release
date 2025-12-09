@@ -44,13 +44,34 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 			.addConfig("user.email", inputs.gitEmail, undefined, "global");
 
 		let body = "";
-		let hasUpdateChangeLog = false;
+		const remoteBranch = `github-actions/update-changelog-v${version}`;
+		const octokit = github.getOctokit(inputs.githubToken);
 		if (fs.existsSync(changelogPath)) {
 			const changelog = fs.readFileSync(changelogPath).toString();
 			body = generateReleaseNote(changelog, version);
 
-			// CHANGELOG に差分が存在しない場合は独自に書き込む
+			// CHANGELOG に差分が存在しない場合は独自に書き込みを行う。さらに publish せず Pull Request を作成する
 			if (body === "") {
+				// 作業用ブランチにチェックアウト
+				let branchExists = true;
+				try {
+					await octokit.rest.repos.getBranch({
+						owner: ownerName,
+						repo: repositoryName,
+						branch: remoteBranch,
+					});
+				} catch (error) {
+					if (error.status === 404) {
+						branchExists = false;
+					} else {
+						throw error;
+					}
+				}
+				if (!branchExists) {
+					await git.checkoutLocalBranch(remoteBranch);
+				} else {
+					await git.checkout(remoteBranch);
+				}
 				// UNRELEASED_CHANGES.md が存在したらそれを読み込む
 				if (fs.existsSync(unreleasedChangesPath)) {
 					body = fs.readFileSync(unreleasedChangesPath).toString().trim();
@@ -66,39 +87,30 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 				fs.writeFileSync(changelogPath, newChangelog);
 				await git.add(changelogPath);
 				await git.commit("Update CHANGELOG.md");
-				hasUpdateChangeLog = true;
+				await git.push("origin", remoteBranch, { "--force": null });
+				const { data: pullRequests } = await octokit.rest.pulls.list({
+					owner: ownerName,
+					repo: repositoryName,
+					head: `${ownerName}:${remoteBranch}`,
+				});
+				if (pullRequests.length === 0) {
+					const prTitle = `Update CHANGELOG for v${version}`;
+					const prBody = `CHANGELOG.md was updated for v${version}.\n\n`
+						+ "Please check the contents and merge this Pull Request to proceed with the release.";
+					await octokit.rest.pulls.create({
+						owner: ownerName,
+						repo: repositoryName,
+						title: prTitle,
+						body: prBody,
+						head: remoteBranch,
+						base: currentBranch
+					});
+				}
+				return;
 			}
 		} else {
 			// TODO: 文言の修正 (もう少し機械的に抽出できそう?)
 			body = "* その他の更新";
-		}
-
-		const octokit = github.getOctokit(inputs.githubToken);
-
-		// CHANGELOG を更新する場合は、publish せず Pull Request を作成する
-		if (hasUpdateChangeLog) {
-			const localBranch = `update-changelog-${Date.now()}`;
-			const remoteBranch = "github-actions/update-changelog";
-			await git.checkoutLocalBranch(localBranch);
-			await git.push("origin", `${localBranch}:${remoteBranch}`, { "--force": null });
-			const { data: pullRequests } = await octokit.rest.pulls.list({
-				owner: ownerName,
-				repo: repositoryName,
-				head: `${ownerName}:${remoteBranch}`,
-			});
-			if (pullRequests.length === 0) {
-				const prTitle = "Update CHANGELOG";
-				const prBody = `CHANGELOG.md was updated.\n\nPlease check the contents and merge this Pull Request to proceed with the release.`;
-				await octokit.rest.pulls.create({
-					owner: ownerName,
-					repo: repositoryName,
-					title: prTitle,
-					body: prBody,
-					head: remoteBranch,
-					base: currentBranch
-				});
-			}
-			return;
 		}
 
 		execSync(`npm publish --tag ${inputs.targetTag}`, { cwd: targetDirPath, encoding: "utf-8" });
