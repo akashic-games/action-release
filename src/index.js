@@ -44,7 +44,7 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 			.addConfig("user.email", inputs.gitEmail, undefined, "global");
 
 		let body = "";
-		const remoteBranch = `github-actions/update-changelog-for-${currentBranch}`;
+		const remoteBranch = `github-actions/update-changelog/${currentBranch}`;
 		const octokit = github.getOctokit(inputs.githubToken);
 		if (fs.existsSync(changelogPath)) {
 			const changelog = fs.readFileSync(changelogPath).toString();
