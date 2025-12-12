@@ -43977,7 +43977,7 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 			.addConfig("user.email", inputs.gitEmail, undefined, "global");
 
 		let body = "";
-		const remoteBranch = `github-actions/update-changelog-v${version}`;
+		const remoteBranch = `github-actions/update-changelog-for-${currentBranch}`;
 		const octokit = github.getOctokit(inputs.githubToken);
 		if (fs.existsSync(changelogPath)) {
 			const changelog = fs.readFileSync(changelogPath).toString();
@@ -44027,8 +44027,8 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 					head: `${ownerName}:${remoteBranch}`,
 				});
 				if (pullRequests.length === 0) {
-					const prTitle = `Update CHANGELOG for v${version}`;
-					const prBody = `CHANGELOG.md was updated for v${version}.\n\n`
+					const prTitle = `Update CHANGELOG for ${currentBranch}`;
+					const prBody = `CHANGELOG.md was updated for ${currentBranch}.\n\n`
 						+ "Please check the contents and merge this Pull Request to proceed with the release.";
 					await octokit.rest.pulls.create({
 						owner: ownerName,
