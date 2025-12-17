@@ -43052,29 +43052,8 @@ module.exports = (changelog, version) => {
 
 module.exports = (changelog, version, content) => {
 	const changelogArray = changelog.split("\n");
-	const newContent = `${content}\n`;
-	const mdContent = [`## ${version}`, ...newContent.split("\n")];
-	const versionHeader = `## ${version}`;
-	let versionFound = false;
-
-	for (let i = 0; i < changelogArray.length; i++) {
-		if (changelogArray[i].startsWith(versionHeader)) {
-			// バージョンが既に存在する場合、内容を置き換える
-			let j = i + 1;
-			while (j < changelogArray.length && !changelogArray[j].startsWith("## ")) {
-				changelogArray.splice(j, 1); // 古い内容を削除
-			}
-			changelogArray.splice(i + 1, 0, ...newContent.split("\n")); // 新しい内容を挿入
-			versionFound = true;
-			break;
-		}
-	}
-
-	if (!versionFound) {
-		// バージョンが存在しない場合、新しいバージョンを追記
-		changelogArray.splice(2, 0, ...mdContent);
-	}
-
+	const mdContent = `## ${version}\n${content}\n`;
+	changelogArray.splice(2, 0, mdContent);
 	return changelogArray.join("\n");
 };
 
@@ -43977,34 +43956,13 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 			.addConfig("user.email", inputs.gitEmail, undefined, "global");
 
 		let body = "";
-		const remoteBranch = `github-actions/update-changelog/${currentBranch}`;
-		const octokit = github.getOctokit(inputs.githubToken);
+		let hasUpdateChangeLog = false;
 		if (fs.existsSync(changelogPath)) {
 			const changelog = fs.readFileSync(changelogPath).toString();
 			body = generateReleaseNote(changelog, version);
 
-			// CHANGELOG に差分が存在しない場合は独自に書き込みを行う。さらに publish せず Pull Request を作成する
+			// CHANGELOG に差分が存在しない場合は独自に書き込む
 			if (body === "") {
-				// 作業用ブランチにチェックアウト
-				let branchExists = true;
-				try {
-					await octokit.rest.repos.getBranch({
-						owner: ownerName,
-						repo: repositoryName,
-						branch: remoteBranch,
-					});
-				} catch (error) {
-					if (error.status === 404) {
-						branchExists = false;
-					} else {
-						throw error;
-					}
-				}
-				if (!branchExists) {
-					await git.checkoutLocalBranch(remoteBranch);
-				} else {
-					await git.checkout(remoteBranch);
-				}
 				// UNRELEASED_CHANGES.md が存在したらそれを読み込む
 				if (fs.existsSync(unreleasedChangesPath)) {
 					body = fs.readFileSync(unreleasedChangesPath).toString().trim();
@@ -44020,30 +43978,38 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 				fs.writeFileSync(changelogPath, newChangelog);
 				await git.add(changelogPath);
 				await git.commit("Update CHANGELOG.md");
-				await git.push("origin", remoteBranch, { "--force": null });
-				const { data: pullRequests } = await octokit.rest.pulls.list({
-					owner: ownerName,
-					repo: repositoryName,
-					head: `${ownerName}:${remoteBranch}`,
-				});
-				if (pullRequests.length === 0) {
-					const prTitle = `Update CHANGELOG for ${currentBranch}`;
-					const prBody = `CHANGELOG.md was updated for ${currentBranch}.\n\n`
-						+ "Please check the contents and merge this Pull Request to proceed with the release.";
-					await octokit.rest.pulls.create({
-						owner: ownerName,
-						repo: repositoryName,
-						title: prTitle,
-						body: prBody,
-						head: remoteBranch,
-						base: currentBranch
-					});
-				}
-				return;
+				hasUpdateChangeLog = true;
 			}
 		} else {
 			// TODO: 文言の修正 (もう少し機械的に抽出できそう?)
 			body = "* その他の更新";
+		}
+
+		const octokit = github.getOctokit(inputs.githubToken);
+
+		// CHANGELOG を更新する場合は、publish せず Pull Request を作成する
+		if (hasUpdateChangeLog) {
+			const remoteBranch = `github-actions/update-changelog/${currentBranch}`;
+			await git.push("origin", `${currentBranch}:${remoteBranch}`, { "--force": null });
+			const { data: pullRequests } = await octokit.rest.pulls.list({
+				owner: ownerName,
+				repo: repositoryName,
+				head: `${ownerName}:${remoteBranch}`,
+			});
+			if (pullRequests.length === 0) {
+				const prTitle = `Update CHANGELOG for ${currentBranch}`;
+				const prBody = `CHANGELOG.md was updated for ${currentBranch}.\n\n`
+						+ "Please check the contents and merge this Pull Request to proceed with the release.";
+				await octokit.rest.pulls.create({
+					owner: ownerName,
+					repo: repositoryName,
+					title: prTitle,
+					body: prBody,
+					head: remoteBranch,
+					base: currentBranch
+				});
+			}
+			return;
 		}
 
 		execSync(`npm publish --tag ${inputs.targetTag}`, { cwd: targetDirPath, encoding: "utf-8" });
