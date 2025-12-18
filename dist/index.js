@@ -43989,19 +43989,26 @@ const currentBranch = process.env.GITHUB_REF_NAME;
 
 		// CHANGELOG を更新する場合は、publish せず Pull Request を作成する
 		if (hasUpdateChangeLog) {
-			const branchName = `update-changelog-for-v${version}-${Date.now()}`;
-			await git.checkoutLocalBranch(branchName);
-			await git.push("origin", branchName);
-			const prTitle = `Update CHANGELOG for v${version}`;
-			const prBody = `CHANGELOG.md was updated for v${version}.\n\nPlease check the contents and merge this Pull Request to proceed with the release.`;
-			await octokit.rest.pulls.create({
+			const remoteBranch = `github-actions/update-changelog/${currentBranch}`;
+			await git.push("origin", `${currentBranch}:${remoteBranch}`, { "--force": null });
+			const { data: pullRequests } = await octokit.rest.pulls.list({
 				owner: ownerName,
 				repo: repositoryName,
-				title: prTitle,
-				body: prBody,
-				head: branchName,
-				base: currentBranch
+				head: `${ownerName}:${remoteBranch}`,
 			});
+			if (pullRequests.length === 0) {
+				const prTitle = `Update CHANGELOG for ${currentBranch}`;
+				const prBody = `CHANGELOG.md was updated for ${currentBranch}.\n\n`
+						+ "Please check the contents and merge this Pull Request to proceed with the release.";
+				await octokit.rest.pulls.create({
+					owner: ownerName,
+					repo: repositoryName,
+					title: prTitle,
+					body: prBody,
+					head: remoteBranch,
+					base: currentBranch
+				});
+			}
 			return;
 		}
 
